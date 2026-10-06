@@ -1,0 +1,4 @@
+<Solution>
+  <Project Path="CPU Emulator/CPU Emulator.csproj" />
+  <Project Path="CPU Emulator Tests/CPU Emulator Tests.csproj" />
+</Solution>
