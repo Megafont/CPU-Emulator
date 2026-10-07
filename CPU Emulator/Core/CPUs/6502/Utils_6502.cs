@@ -68,8 +68,8 @@ namespace CPU_Emulator.Core.CPUs._6502
 		/// <summary>
 		/// Adds the value of the IndexX register to the specified memory address.
 		/// </summary>
-		/// <param name="baseRamAddress">The base address to read a byte from in RAM.</param>
-		private byte GetMemoryAddress_ZeroPageX(byte baseRamAddress)
+		/// <param name="baseRamAddress">The base address in RAM.</param>
+		internal byte GetMemoryAddress_ZeroPageX(byte baseRamAddress)
 		{
 			// NOTE: This addition can potentially cause the value to wrap around to 0, but this is correct behavior for the 6502 CPU, so we don't need to do any special handling here.
 			return (byte) (baseRamAddress + _REG_IndexRegisterX);
@@ -78,8 +78,8 @@ namespace CPU_Emulator.Core.CPUs._6502
 		/// <summary>
 		/// Adds the value of the IndexY register to the specified memory address.
 		/// </summary>
-		/// <param name="baseRamAddress">The base address to read a byte from in RAM.</param>
-		private byte GetMemoryAddress_ZeroPageY(byte baseRamAddress)
+		/// <param name="baseRamAddress">The base address in RAM.</param>
+		internal byte GetMemoryAddress_ZeroPageY(byte baseRamAddress)
 		{
 			// NOTE: This addition can potentially cause the value to wrap around to 0, but this is correct behavior for the 6502 CPU, so we don't need to do any special handling here.
 			return (byte) (baseRamAddress + _REG_IndexRegisterY);
@@ -90,8 +90,8 @@ namespace CPU_Emulator.Core.CPUs._6502
 		/// <summary>
 		/// Adds the value of the IndexX register to the specified absolute 2-byte memory address.
 		/// </summary>
-		/// <param name="sourceRamAddress">The base address to read a byte from in RAM.</param>
-		private ushort GetMemoryAddress_AbsoluteX(ushort sourceRamAddress)
+		/// <param name="sourceRamAddress">The base address in RAM.</param>
+		internal ushort GetMemoryAddress_AbsoluteX(ushort sourceRamAddress)
 		{
 			// NOTE: This addition can potentially cause the value to wrap around to 0, but this is correct behavior for the 6502 CPU, so we don't need to do any special handling here.
 			return (ushort) (sourceRamAddress + _REG_IndexRegisterX);
@@ -100,8 +100,8 @@ namespace CPU_Emulator.Core.CPUs._6502
 		/// <summary>
 		/// Adds the value of the IndexY register to the specified absolute 2-byte memory address.
 		/// </summary>
-		/// <param name="sourceRamAddress">The base address to read a byte from in RAM.</param>
-		private ushort GetMemoryAddress_AbsoluteY(ushort sourceRamAddress)
+		/// <param name="sourceRamAddress">The base address to in RAM.</param>
+		internal ushort GetMemoryAddress_AbsoluteY(ushort sourceRamAddress)
 		{
 			// NOTE: This addition can potentially cause the value to wrap around to 0, but this is correct behavior for the 6502 CPU, so we don't need to do any special handling here.
 			return (ushort)(sourceRamAddress + _REG_IndexRegisterY);
@@ -110,20 +110,55 @@ namespace CPU_Emulator.Core.CPUs._6502
 		/// <summary>
 		/// Retrieves the memory address stored at the specified absolute 2-byte memory address.
 		/// </summary>
-		/// <param name="sourceRamAddress">The source ram address to read another address from in RAM.</param>
-		private ushort GetMemoryAddress_Indirect(ushort sourceRamAddress)
+		/// <param name="sourceRamAddress">The RAM address to read another address from.</param>
+		internal ushort GetMemoryAddress_Indirect(ushort sourceRamAddress)
 		{
 			return _RAM.ReadUShort(sourceRamAddress);
 		}
 
 		/// <summary>
-		/// Adds the value of the IndexY register to the specified absolute 2-byte memory address.
+		/// Adds the value of the IndexX register to the specified zero page address, then reads the 2-byte
+		/// memory address stored there. This addressing mode is typically used for referencing a table in
+		/// the zero page (first page of RAM).
 		/// </summary>
-		/// <param name="sourceRamAddress">The base address to read a byte from in RAM.</param>
-		private ushort MemoryAccess_IndexedIndirect(ushort sourceRamAddress)
+		/// <param name="sourceRamAddress">The zero page address holding the 2-byte pointer.</param>
+		internal ushort GetMemoryAddress_IndexedIndirect(byte sourceRamAddress)
 		{
-			// NOTE: This addition can potentially cause the value to wrap around to 0, but this is correct behavior for the 6502 CPU, so we don't need to do any special handling here.
-			return _RAM[(ushort)(sourceRamAddress + _REG_IndexRegisterX)];
+			// NOTE: The X register is added to the zero page address itself, wrapping around within the zero page.
+			byte effectiveZeroPageAddress = GetMemoryAddress_ZeroPageX(sourceRamAddress);
+
+			return ReadZeroPagePointer(effectiveZeroPageAddress);
+		}
+
+		/// <summary>
+		/// Reads the 2-byte memory address stored at the specified zero page address, then adds the value
+		/// of the IndexY register to it. This addressing mode is typically used for referencing a table in
+		/// the zero page (first page of RAM).
+		/// </summary>
+		/// <param name="sourceRamAddress">The zero page address holding the 2-byte pointer.</param>
+		/// <param name="basePointerAddress">The 2-byte pointer read from the zero page, before the Y register is added to it.</param>
+		internal ushort GetMemoryAddress_IndirectIndexed(byte sourceRamAddress, out ushort basePointerAddress)
+		{
+			basePointerAddress = ReadZeroPagePointer(sourceRamAddress);
+
+			// NOTE: The Y register is added to the 2-byte pointer itself, so this wraps around at the end of
+			//		 all of RAM instead of staying within the zero page.
+			return (ushort) (basePointerAddress + _REG_IndexRegisterY);
+		}
+
+		/// <summary>
+		/// Reads a 2-byte memory address stored in the zero page (first page of RAM).
+		/// The 6502 is little-endian, so the low byte of the address is stored first.
+		/// </summary>
+		/// <param name="zeroPageAddress">The zero page address the 2-byte pointer is stored at.</param>
+		internal ushort ReadZeroPagePointer(byte zeroPageAddress)
+		{
+			// NOTE: Both bytes are read with byte wrapping, so a pointer stored at $FF has its high byte read
+			//		 from $00 rather than $0100. This is correct behavior for the 6502 CPU.
+			ushort pointerLowByte = _RAM[zeroPageAddress];
+			ushort pointerHighByte = _RAM[(byte) (zeroPageAddress + 1)];
+
+			return (ushort) ((pointerHighByte << 8) | pointerLowByte);
 		}
 	}
 

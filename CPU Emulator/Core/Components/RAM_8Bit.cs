@@ -39,6 +39,15 @@ namespace CPU_Emulator.Core.Components
 			Array.Clear(_Memory, 0, _Memory.Length);
 		}
 
+		/// <summary>
+		/// Returns the page the given memory address is on.
+		/// </summary>
+		/// <param name="ramAddress">The memory address to get the page of.</param>
+		/// <returns>The page the specified ram address is on.</returns>
+		public int GetPage(ushort ramAddress)
+		{
+			return (int) MathF.Floor(ramAddress / PageSize);
+		}
 
 		/// <summary>
 		/// Copies a block of bytes to the specified position in the RAM.
@@ -149,8 +158,8 @@ namespace CPU_Emulator.Core.Components
 		/// <exception cref="ArgumentException">If the passed in index is not valid.</exception>
 		public ushort ReadUShort(ushort index)
 		{
-			if (index >= PageSize - 2)
-				throw new ArgumentException($"The byte index must be in the range 0-{PageSize - 2}!");
+			if (index > TotalByteCount - 2)
+				throw new ArgumentException($"The byte index must be in the range 0-{TotalByteCount - 2}!");
 
 
 			return MemoryUtils.ReadUInt16LittleEndian(_Memory, index);
@@ -164,8 +173,8 @@ namespace CPU_Emulator.Core.Components
 		/// <exception cref="ArgumentException">If the passed in index is not valid.</exception>
 		public void WriteUShort(ushort index, ushort value)
 		{
-			if (index >= PageSize - 2)
-				throw new ArgumentException($"The byte index must be in the range 0-{PageSize - 2}!");
+			if (index > TotalByteCount - 2)
+				throw new ArgumentException($"The byte index must be in the range 0-{TotalByteCount - 2}!");
 
 
 			MemoryUtils.WriteUInt16LittleEndian(_Memory, index, value);

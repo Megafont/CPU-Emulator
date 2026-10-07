@@ -34,5 +34,6 @@ namespace CPU_Emulator.Core.Interfaces.Components
 
 		void DEBUG_PrintPage(ushort pageIndex, byte bytesPerRow = 32, byte groupSize = 2, char separator = ' ');
 		void DEBUG_PrintAllPages(byte bytesPerRow = 32, byte groupSize = 2, char separator = ' ');
+		int GetPage(ushort ramAddress);
 	}
 }

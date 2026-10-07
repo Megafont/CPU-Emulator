@@ -9,25 +9,27 @@ namespace CPU_Emulator.Core.CPUs._6502
 	/// </summary>
 	public class InstructionDef_6502
 	{
-		private static string[] _AddressingModeCmdSuffixes = new string[]
+		// NOTE: This is keyed by the addressing mode enum itself instead of an array indexed by the enum's ordinal,
+		//		 so adding or reordering enum members can never silently shift the suffixes (or run off the array end).
+		public static string GetAddressingModeCmdSuffix(AddressingModes_6502 addressingMode)
 		{
-			"_Imm",		// Immediate
-			"_ZP",		// Zero Page
-			"_ZPX",		// Zero Page, X
-			"_ZPY",		// Zero Page, Y
-			"_R",		// Relative
-			"_A",		// Absolute
-			"_AX",		// Absolute, X
-			"_AY",		// Absolute, Y
-			"_Idr",		// Indirect
-			"_IdxIdr",	// Indexed Indirect
-			"_IdrIdx"	// Indirect Indexed
-
-		};
-
-		public static string GetAddressingModeCmdSuffix(int index)
-		{
-			return _AddressingModeCmdSuffixes[index];
+			return addressingMode switch
+			{
+				AddressingModes_6502.Implied => "_Impl",
+				AddressingModes_6502.Accumulator => "_Acc",
+				AddressingModes_6502.Immediate => "_Imm",
+				AddressingModes_6502.ZeroPage => "_ZP",
+				AddressingModes_6502.ZeroPage_X => "_ZPX",
+				AddressingModes_6502.ZeroPage_Y => "_ZPY",
+				AddressingModes_6502.Relative => "_R",
+				AddressingModes_6502.Absolute => "_A",
+				AddressingModes_6502.Absolute_X => "_AX",
+				AddressingModes_6502.Absolute_Y => "_AY",
+				AddressingModes_6502.Indirect => "_Idr",
+				AddressingModes_6502.IndexedIndirect => "_IdxIdr",
+				AddressingModes_6502.IndirectIndexed => "_IdrIdx",
+				_ => throw new ArgumentOutOfRangeException(nameof(addressingMode)),
+			};
 		}
 
 
@@ -41,6 +43,7 @@ namespace CPU_Emulator.Core.CPUs._6502
 
 		// The number of ticks it takes this instruction to run if the CPU's UseRealisticInstructionDurations option is on.
 		public byte ExecutionDuration { get; private set; }
+		
 
 		public InstructionExecutionDelegate ExecutionDelegate { get; private set; }
 
@@ -53,7 +56,7 @@ namespace CPU_Emulator.Core.CPUs._6502
 			ExecutionDuration = executionDuration;
 			AddressingMode = addressingMode;
 			ExecutionDelegate = instructionExecutionDelegate;
-			NameKey = assemblyCmdName + _AddressingModeCmdSuffixes[(int) addressingMode];
+			NameKey = assemblyCmdName + GetAddressingModeCmdSuffix(addressingMode);
 		}
 	}
 }
